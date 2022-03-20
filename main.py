@@ -19,15 +19,56 @@ class Game:
     def __init__(self):
         self.game = []
         self.lignes = []
+        self.coups = []
+        self.coup_courant = 0
+        self.positions = {}
 
     def launcher(self):
         """
         Méthode qui génère aléatoirement le jeu
         """
-        numbers = [i for i in range(1, 16)] + [" "]
+        numbers = [i for i in range(1, 16)]
+        numbers.extend(" ")  # ajouter la case vide
         random.shuffle(numbers)
+
         self.game = numbers
         self.lignes = [self.game[i:i + 4] for i in range(0, len(self.game), 4)]
+
+    def positions_cases(self):
+        """
+        Méthode qui récupère les positions des valeurs des cases
+        :return positions: list, liste des positions de chaque case
+        """
+        lignes = self.lignes
+        positions = {lignes[i][j]: (i, j) for i in range(len(lignes)) for j in range(len(lignes[i]))}
+
+        return positions
+
+    def distance_espace(self):
+        """
+        Méthode qui calcule la distance de chaque case à celle de la case dont la valeur est vide
+        Algorithme des k-nearest-neighbours
+        :return distances: list, liste des distances
+        """
+        positions = self.positions_cases()
+        self.positions = positions
+        case_vide = [value for key, value in positions.items() if key == " "]
+
+        def distance(case):
+            return math.sqrt((case[0] - case_vide[0][0]) ** 2 + (case[1] - case_vide[0][1]) ** 2)
+
+        return {key: distance(value) for key, value in positions.items()}
+
+    def cases_disponibles(self):
+        """
+        Méthode qui renvoie les coups possibles
+        :return: list
+        """
+        distances = self.distance_espace()
+        coups_possibles = [key for key, value in distances.items() if value == 1.0]
+        self.coups = coups_possibles
+
+        return coups_possibles
 
     def afficher_plateau(self):
         """
@@ -48,42 +89,61 @@ class Game:
             print("|")
         print(motif)
 
-    def positions_cases(self):
+    def jeu_coups(self):
+        print("_nVoici les coups que vous pouvez jouer:\n")
+        for elt in self.coups:
+            print(elt)
+
+        while True:
+            coup = input("\nQuelle nombre souhaitez-vous jouer ?")
+            if coup.isdigit():
+                if int(coup) in self.cases_disponibles():
+                    self.coup_courant = int(coup)
+                    break
+
+    def permutation(self):
         """
-        Méthode qui récupère les positions des valeurs des cases
-        :return positions: list, liste des positions de chaque case
+        Méthode qui permute l'élément vide et le coup joué
         """
-        lignes = self.lignes
-        positions = {lignes[i][j]: (i, j) for i in range(len(lignes)) for j in range(len(lignes[i]))}
+        # recherche de la positon de l'espace
+        pos_vide = ()
+        pos_courant = ()
+        for i in range(len(self.lignes)):
+            for j in range(len(self.lignes[i])):
+                if self.lignes[i][j] == " ":
+                    pos_vide = i, j
+                elif self.lignes[i][j] == self.coup_courant:
+                    pos_courant = i, j
 
-        return positions
+        ax = pos_vide[0]
+        ay = pos_vide[1]
+        bx = pos_courant[0]
+        by = pos_courant[1]
 
-    def distance_espace(self):
-        """
-        Méthode qui calcule la distance de chaque case à celle de la case dont la valeur est vide
-        Algorithme des k-nearest-neighbours
-        :return distances: list, liste des distances
-        """
-        positions = self.positions_cases()
-        case_vide = [value for key, value in positions.items() if key == " "]
+        self.lignes[ax][ay], self.lignes[bx][by] = self.lignes[bx][by], self.lignes[ax][ay]
 
-        distance = lambda case: math.sqrt((case[0] - case_vide[0][0]) ** 2 + (case[1] - case_vide[0][1]) ** 2)
+    def maj_game(self):
+        self.game = [j for i in self.lignes for j in i]
 
-        return {key: distance(value) for key, value in positions.items()}
+    def jeu(self):
+        r = [i for i in range(1, 16)]
+        r.extend(" ")
+        while self.game != r:
+            self.afficher_plateau()
+            self.cases_disponibles()
+            self.cases_disponibles()
+            self.jeu_coups()
+            self.permutation()
+            self.maj_game()
+        self.afficher_plateau()
+        print('\nBravo ! Vous avez gagné !!!')
 
-    def cases_disponibles(self):
-        """
-        Méthode qui renvoie les coups possibles
-        :return: list
-        """
 
-        distances = self.distance_espace()
-
-        return [key for key, value in distances.items() if value == 1.0]
+# ======================================================================================================================
+# === PROGRAMME PRINCIPAL
+# ======================================================================================================================
 
 
 g = Game()
 g.launcher()
-g.afficher_plateau()
-g.cases_disponibles()
-print(g.cases_disponibles())
+g.jeu()
