@@ -25,14 +25,47 @@ class Taquin:
         self.positions = {}
         self.compteur = 0
 
+    @staticmethod
+    def tri_insertion(tab: list):
+        """
+        Tri par insertion qui permet de trier une liste
+        :return tab: list, liste triée
+        :return permutation: int, nombre de permutations réalisées pour trier la liste
+        """
+        permutation = 0
+        for i in range(1, len(tab)):  # on parcourt le tableau à partir du deuxième élément
+            rang = i  # on récupère la position de la valeur égale à déplacer
+            while tab[rang] < tab[rang - 1] and rang > 0:
+                tab[rang], tab[rang - 1] = tab[rang - 1], tab[rang]
+                rang -= 1
+                permutation += 1
+        return permutation
+
+    def est_resolvable(self, tab: list) -> bool:
+        """
+        Méthode qui teste si le set généré est résolvable
+        :param tab: list, set généré
+        :return: bool
+        """
+        tab2 = tab.copy()
+        return self.tri_insertion(tab2) % 2 == 0
+
     def launcher(self):
         """
         Méthode qui génère aléatoirement le set de départ
         """
-        numbers = [i for i in range(1, 16)]
-        numbers.extend(' ')  # ajouter la case vide
-        random.shuffle(numbers)
+        while True:
+            numbers = [i for i in range(1, 16)]
+            numbers.extend(' ')  # ajouter la case vide
+            random.shuffle(numbers)
+            rang_espace = numbers.index(' ')
+            numbers.pop(rang_espace)
 
+            if self.est_resolvable(numbers):
+                break
+
+        # ajout de la case vide
+        numbers.insert(rang_espace, ' ')
         self.ensemble_jeu = numbers
         self.lignes = [self.ensemble_jeu[i:i + 4] for i in range(0, len(self.ensemble_jeu), 4)]
 
@@ -82,7 +115,7 @@ class Taquin:
         pos_vide, pos_courant = (), ()
         for i in range(len(self.lignes)):
             for j in range(len(self.lignes[i])):
-                if self.lignes[i][j] == " ":  # recherche de la case vide
+                if self.lignes[i][j] == ' ':  # recherche de la case vide
                     pos_vide = i, j
                 elif self.lignes[i][j] == self.coup_courant:  # recherche de la case valeur
                     pos_courant = i, j
@@ -135,7 +168,7 @@ class Taquin:
                 if int(coup) in self.cases_disponibles():
                     self.coup_courant = int(coup)
                     break
-            elif coup == "stop":
+            elif coup == 'stop':
                 self.fin_jeu = True
 
     def jeu(self):
